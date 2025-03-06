@@ -1,6 +1,3 @@
-[submodule "libs/libs/linmath"]
-	path = libs/libs/linmath
-	url = https://github.com/datenwolf/linmath.h.git
 [submodule "libs/linmath"]
 	path = libs/linmath
 	url = https://github.com/datenwolf/linmath.h.git
@@ -10,9 +7,3 @@
 [submodule "libs/nuklear"]
 	path = libs/nuklear
 	url = https://github.com/Immediate-Mode-UI/Nuklear.git
-[submodule "libs/curl"]
-	path = libs/curl
-	url = https://github.com/curl/curl.git
-[submodule "libs/cJSON"]
-	path = libs/cJSON
-	url = https://github.com/DaveGamble/cJSON.git

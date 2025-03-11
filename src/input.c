@@ -1,21 +1,13 @@
 #include "input.h"
 #include "ecs.h"
+#include "macros.h"
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
 
-static float camera_yaw   = 0.0f;  // in degrees
-static float camera_pitch = 0.0f;
-
 static const float MOVE_SPEED   = 2.5f;
 static const float MOUSE_SENSITIVITY = 0.2f;
 static const float MAX_PITCH    = 89.0f;      // lock pitch to avoid flipping the camera
-
-#ifndef DEG2RAD
-#define DEG2RAD(x) ((x) * (3.1415926535f / 180.0f))
-#endif
-
-#define PI 3.141592653589793
 
 void input_init(InputState* input) {
     memset(input, 0, sizeof(InputState));
@@ -58,11 +50,6 @@ void input_handle_event(InputState* state, const sapp_event* ev) {
     }
 }
 
-/* void input_update(InputState* input) { */
-/*     // input->mouse_dx = 0.0f; */
-/*     // input->mouse_dy = 0.0f; */
-/* } */
-
 /*
   Movement
  */
@@ -103,7 +90,6 @@ void input_process(InputState* input, Entity player, Entity camera, float delta_
 
     static float player_yaw = 0.0f;
     static float camera_pitch = 0.0f;
-    const float MOUSE_SENSITIVITY = 0.2f;
 
     // Left = +yaw (CCW), Right = -yaw (CW)
     player_yaw -= input->mouse_dx * MOUSE_SENSITIVITY;
@@ -111,8 +97,8 @@ void input_process(InputState* input, Entity player, Entity camera, float delta_
     if (player_yaw < 0.0f) player_yaw += 360.0f;
 
     camera_pitch -= input->mouse_dy * MOUSE_SENSITIVITY;
-    if (camera_pitch > 89.0) camera_pitch = 89.0f;
-    if (camera_pitch < -89.0f) camera_pitch = -89.0;
+    if (camera_pitch > MAX_PITCH) camera_pitch = MAX_PITCH;
+    if (camera_pitch < -MAX_PITCH) camera_pitch = -MAX_PITCH;
 
     cam->yaw = player_yaw;
     cam->pitch = camera_pitch;

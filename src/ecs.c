@@ -4,6 +4,7 @@
 
 #include "ecs.h"
 #include "HandmadeMath.h"
+#include "macros.h"
 #include "../libs/linmath/linmath.h"
 
 #include "cube.glsl.h"
@@ -13,10 +14,6 @@ static TransformComponent transform_pool[MAX_ENTITIES];
 static RenderComponent render_pool[MAX_ENTITIES];
 static CameraComponent camera_pool[MAX_ENTITIES];
 static FollowComponent follow_pool[MAX_ENTITIES];
-
-#ifndef DEG2RAD
-#define DEG2RAD(x) ((x) * (3.1415926535f / 180.0f))
-#endif
 
 void ecs_init()
 {
@@ -245,7 +242,7 @@ void render_system(int width, int height)
 
             mat4x4_look_at(view, position, target, up);
 
-            float fovy_rad = cam->fov * (3.1415926535f / 180.0f);
+            float fovy_rad = cam->fov * (PI / 180.0f);
             mat4x4_perspective(proj, fovy_rad, cam->aspect, cam->near_plane, cam->far_plane);
 
             camera_found = true;

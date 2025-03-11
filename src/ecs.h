@@ -8,8 +8,7 @@
 #include "../libs/sokol/sokol_glue.h"
 #include "../libs/linmath/linmath.h"
 
-#include "constants.h"
-#include "types.h"
+#define MAX_ENTITIES 4096
 
 typedef uint32_t Entity;
 #define INVALID_ENTITY MAX_ENTITIES

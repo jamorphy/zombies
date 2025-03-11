@@ -13,7 +13,6 @@
 #include "sokol_glue.h"
 #include "sokol_log.h"
 
-#include "log.h"
 #include "ecs.h"
 #include "input.h"
 
@@ -41,7 +40,6 @@ void init(void)
 
     // Player entity (cube)
     player = entity_create();
-    //float q[4] = {0.0f, 0.0f, 0.0f, 1.0f};
     entity_add_transform(player, (vec3){0, 0, 0}, q, (vec3){1, 1, 1});
     entity_add_render(player, rcube);
 
@@ -78,6 +76,7 @@ void frame(void)
 {
     float delta_time = sapp_frame_duration();
     input_process(&g_input, player, camera, delta_time);
+    follow_system(delta_time);
     render_system(sapp_width(), sapp_height());
 }
 

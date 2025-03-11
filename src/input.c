@@ -7,7 +7,7 @@
 static float camera_yaw   = 0.0f;  // in degrees
 static float camera_pitch = 0.0f;
 
-static const float MOVE_SPEED   = 0.2f;
+static const float MOVE_SPEED   = 2.5f;
 static const float MOUSE_SENSITIVITY = 0.2f;
 static const float MAX_PITCH    = 89.0f;      // lock pitch to avoid flipping the camera
 
@@ -70,17 +70,17 @@ void input_get_movement_direction(const InputState* input, vec3 out_dir) {
     out_dir[0] = 0.0f;
     out_dir[1] = 0.0f;
     out_dir[2] = 0.0f;
-    
+
     if (input->keys[SAPP_KEYCODE_W]) out_dir[2] += 1.0f;
     if (input->keys[SAPP_KEYCODE_S]) out_dir[2] -= 1.0f;
-    if (input->keys[SAPP_KEYCODE_A]) out_dir[0] -= 1.0f;
-    if (input->keys[SAPP_KEYCODE_D]) out_dir[0] += 1.0f;
+    if (input->keys[SAPP_KEYCODE_A]) out_dir[0] += 1.0f;
+    if (input->keys[SAPP_KEYCODE_D]) out_dir[0] -= 1.0f;
 }
 
 void input_get_movement_vector(const InputState* input, float speed, vec3 out_vec, float yaw) {
     vec3 dir;
     input_get_movement_direction(input, dir);
-    
+
     // Rotate movement direction by camera yaw
     float yaw_rad = DEG2RAD(yaw);
     vec3 rotated_dir = {
@@ -88,73 +88,53 @@ void input_get_movement_vector(const InputState* input, float speed, vec3 out_ve
         dir[1],
         dir[0] * sinf(yaw_rad) + dir[2] * cosf(yaw_rad)
     };
-    
+
     if (vec3_len(rotated_dir) > 0) {
         vec3_norm(rotated_dir, rotated_dir);
     }
     vec3_scale(out_vec, rotated_dir, speed);
 }
 
-void input_process(InputState* input, Entity camera, float delta_time) {
-    // Constants
-    const float MOUSE_SENSITIVITY = 0.1f;
-    const float MOVE_SPEED = 5.0f;
-    const float MAX_PITCH = 89.9f;
-
+void input_process(InputState* input, Entity player, Entity camera, float delta_time)
+{
+    TransformComponent* t = entity_get_transform(player);
     CameraComponent* cam = entity_get_camera(camera);
-    TransformComponent* t = entity_get_transform(camera);
-    if (!cam || !t) return;
+    if (!t) return;
 
-    // 1. Mouse look handling
-    cam->yaw -= input->mouse_dx * MOUSE_SENSITIVITY;
-    cam->pitch -= input->mouse_dy * MOUSE_SENSITIVITY;
-    
-    // Clamp pitch to prevent flipping
-    cam->pitch = fmaxf(-MAX_PITCH, fminf(cam->pitch, MAX_PITCH));
-    
-    // Reset mouse deltas
-    input->mouse_dx = 0.0f;
-    input->mouse_dy = 0.0f;
+    static float player_yaw = 0.0f;
+    static float camera_pitch = 0.0f;
+    const float MOUSE_SENSITIVITY = 0.2f;
 
-    // 2. Camera-relative movement
-    float yaw_rad = DEG2RAD(cam->yaw);
-    float pitch_rad = DEG2RAD(cam->pitch);
+    // Left = +yaw (CCW), Right = -yaw (CW)
+    player_yaw -= input->mouse_dx * MOUSE_SENSITIVITY;
+    if (player_yaw >= 360.0f) player_yaw -= 360.0f;
+    if (player_yaw < 0.0f) player_yaw += 360.0f;
 
-    // Calculate orientation vectors
-    vec3 forward = {
-        cosf(pitch_rad) * sinf(yaw_rad),
-        sinf(pitch_rad),
-        cosf(pitch_rad) * cosf(yaw_rad)
-    };
-    
-    vec3 right = {
-        sinf(yaw_rad - PI/2.0f),  // Simplified right vector calculation
-        0.0f,
-        cosf(yaw_rad - PI/2.0f)
-    };
+    camera_pitch -= input->mouse_dy * MOUSE_SENSITIVITY;
+    if (camera_pitch > 89.0) camera_pitch = 89.0f;
+    if (camera_pitch < -89.0f) camera_pitch = -89.0;
 
-    // Get raw input direction
+    cam->yaw = player_yaw;
+    cam->pitch = camera_pitch;
+
+    // Create player rotation quaternion
+    quat_rotate(t->rotation, DEG2RAD(player_yaw), (vec3){0, 1, 0}); // tilt around Y(aw)
+
+    // Local-space direction e.g., set base_dir W = (0, 0, 1)
+    vec3 base_dir = {0.0f, 0.0f, 0.0f};
+    input_get_movement_direction(input, base_dir);
+
+    // Rotate base direction by player's quaternion
+    // get world-space direction
+    vec3 move_dir;
+    quat_mul_vec3(move_dir, t->rotation, base_dir);
+
+    // Scale by speed and delta time
     vec3 move_input;
-    input_get_movement_vector(input, 1.0f, move_input, delta_time);
+    vec3_scale(move_input, move_dir, MOVE_SPEED * delta_time);
 
-    // Combine vectors based on input
-    vec3 world_move = {0};
-    vec3 temp;
-    
-    // Forward/backward (W/S)
-    vec3_scale(temp, forward, move_input[2]);
-    vec3_add(world_move, world_move, temp);
-    
-    // Left/right (A/D)
-    vec3_scale(temp, right, move_input[0]);
-    vec3_add(world_move, world_move, temp);
-    
-    // Up/down (Q/E or SPACE/SHIFT if implemented)
-    world_move[1] = move_input[1];
+    vec3_add(t->position, t->position, move_input);
 
-    // Apply speed and delta time
-    vec3_scale(world_move, world_move, MOVE_SPEED * delta_time);
-    
-    // Update position
-    vec3_add(t->position, t->position, world_move);
+    input->mouse_dx = 0.0;
+    input->mouse_dy = 0.0;
 }

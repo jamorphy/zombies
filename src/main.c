@@ -6,45 +6,31 @@
 #include <assert.h>
 
 #include "linmath.h"
-#include "cJSON.h"
 
 #define SOKOL_METAL
 #include "sokol_app.h"
 #include "sokol_gfx.h"
 #include "sokol_glue.h"
 #include "sokol_log.h"
-#include "sokol_debugtext.h"
 
 #include "log.h"
 #include "ecs.h"
 #include "input.h"
 
 static InputState g_input;
+static Entity player;
 static Entity camera;
+static Entity cube;
 
 void cleanup(void);
 
 void init(void)
 {
     sg_setup(&(sg_desc){ .environment = sglue_environment(), .logger.func = slog_func });
-
+    ecs_init();
     input_init(&g_input);
 
-    camera = entity_create();
-    float q1[4] = {0.0f, 0.0f, 0.0f, 1.0f };
-    entity_add_transform(camera, (vec3){0, 0, 0}, q1, (vec3){0,2,5});
-    float screen_aspect = (float) sapp_width() / (float) sapp_height();
-    entity_add_camera(
-                      camera,
-                      60.0f,        // FOV in degrees
-                      screen_aspect,
-                      0.1f,         // near clipping plane
-                      1000.0f       // far clipping plane
-                      );
-
-    CameraComponent* cam = entity_get_camera(camera);
-    cam->yaw = 180.0f; // Look along -Z axis
-    cam->pitch = 0.0f;    
+    cube = entity_create();
 
     Entity cube_e = entity_create();
     assert(entity_is_alive(cube_e));
@@ -53,10 +39,34 @@ void init(void)
     RenderComponent rcube = create_cube_render_component();
     entity_add_render(cube_e, rcube);
 
-    Entity cube_e1 = entity_create();
-    assert(entity_is_alive(cube_e1));
-    entity_add_transform(cube_e1, (vec3){0, 20, -20}, q, (vec3){1,0.6,1});
-    entity_add_render(cube_e1, rcube);
+    // Player entity (cube)
+    player = entity_create();
+    //float q[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+    entity_add_transform(player, (vec3){0, 0, 0}, q, (vec3){1, 1, 1});
+    entity_add_render(player, rcube);
+
+    camera = entity_create();
+
+    float offset_x = 0.0f;
+    float offset_y = 5.0f;
+    float offset_z = -5.0f;
+
+    TransformComponent* player_t = entity_get_transform(player);
+    vec3 initial_camera_pos = {
+        player_t->position[0] + offset_x,
+        player_t->position[1] + offset_y,
+        player_t->position[2] + offset_z,
+    };
+
+    entity_add_transform(camera, initial_camera_pos, q, (vec3){1, 1, 1});
+    float screen_aspect = (float)sapp_width() / (float)sapp_height();
+    entity_add_camera(camera, 80.0f, screen_aspect, 0.1f, 1000.0f);
+    // Offset: above and behind
+    entity_add_follow(camera, player, (vec3){offset_x, offset_y, offset_z});
+
+    CameraComponent* cam = entity_get_camera(camera);
+    cam->yaw = -90.0f;
+    cam->pitch = 0.0f;
 }
 
 void input(const sapp_event* ev)
@@ -67,7 +77,7 @@ void input(const sapp_event* ev)
 void frame(void)
 {
     float delta_time = sapp_frame_duration();
-    input_process(&g_input, camera, delta_time);
+    input_process(&g_input, player, camera, delta_time);
     render_system(sapp_width(), sapp_height());
 }
 

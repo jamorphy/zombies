@@ -21,20 +21,17 @@ DEBUG_FLAGS  = -g -O0 -DDEBUG
 #-----------------------------------------------------------------
 # Source Files
 #-----------------------------------------------------------------
-SRC_C_FILES  = main.c ecs.c utils.c input.c
+SRC_C_FILES  = main.c ecs.c input.c
 SOKOL_FILES  = sokol.m        # for native Metal
-CJSON_FILES  = cJSON.c
 
 SOKOL_C_FILES = sokol.c
 SOKOL_C_PATHS = $(addprefix libs/sokol/,$(SOKOL_C_FILES))
 
 SRC_C_PATHS  = $(addprefix src/,$(SRC_C_FILES))
 SOKOL_PATHS  = $(addprefix libs/sokol/,$(SOKOL_FILES))
-CJSON_PATHS  = $(addprefix libs/cJSON/,$(CJSON_FILES))
 
 OBJS = $(SRC_C_FILES:%.c=$(OBJ_DIR)/src/%.o)
 OBJS += $(SOKOL_FILES:%.m=$(OBJ_DIR)/libs/sokol/%.o)
-OBJS += $(CJSON_FILES:%.c=$(OBJ_DIR)/libs/cJSON/%.o)
 
 SHADER_IN  = src/shaders/cube-sapp.glsl
 SHADER_OUT = src/cube-sapp.glsl.h
@@ -92,7 +89,7 @@ web: directories $(SHADER_OUT)
 	    -sUSE_WEBGL2=1 \
 	    -DSOKOL_GLES3 \
 		--shell-file=./src/shell.html \
-	    $(SRC_C_PATHS) $(SOKOL_C_PATHS) $(CJSON_PATHS) \
+	    $(SRC_C_PATHS) $(SOKOL_C_PATHS)  \
 	    -o $(WEB_TARGET)
 
 directories:

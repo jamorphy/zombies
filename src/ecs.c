@@ -12,6 +12,7 @@ static Registry registry = {0};
 static TransformComponent transform_pool[MAX_ENTITIES];
 static RenderComponent render_pool[MAX_ENTITIES];
 static CameraComponent camera_pool[MAX_ENTITIES];
+static FollowComponent follow_pool[MAX_ENTITIES];
 
 #ifndef DEG2RAD
 #define DEG2RAD(x) ((x) * (3.1415926535f / 180.0f))
@@ -23,6 +24,7 @@ void ecs_init()
     memset(&transform_pool, 0, sizeof(transform_pool));
     memset(&render_pool, 0, sizeof(render_pool));
     memset(&camera_pool, 0, sizeof(camera_pool));
+    memset(&follow_pool, 0, sizeof(follow_pool));
 }
 
 Entity entity_create()
@@ -52,7 +54,7 @@ void entity_add_transform(Entity e, vec3 pos, quat rot, vec3 scale)
     if (!entity_is_alive(e)) return;
 
     registry.component_masks[e] |= COMPONENT_TRANSFORM;
-    
+
     transform_pool[e].position[0] = pos[0];
     transform_pool[e].position[1] = pos[1];
     transform_pool[e].position[2] = pos[2];
@@ -77,6 +79,7 @@ bool entity_is_alive(Entity e) {
 TransformComponent* entity_get_transform(Entity e)
 {
     if (!entity_is_alive(e)) return NULL;
+    if (!(registry.component_masks[e] & COMPONENT_TRANSFORM)) return NULL;
     return &transform_pool[e];
 }
 
@@ -84,10 +87,10 @@ void entity_add_render(Entity e, RenderComponent component) {
     if (!entity_is_alive(e)) return;
 
     registry.component_masks[e] |= COMPONENT_RENDER;
-    render_pool[e] = component;    
+    render_pool[e] = component;
 }
 
-RenderComponent create_cube_render_component(void) {    
+RenderComponent create_cube_render_component(void) {
     static float vertices[] = {
         // positions      // colors (RGBA)
         // front
@@ -166,6 +169,44 @@ CameraComponent* entity_get_camera(Entity e)
     return &camera_pool[e];
 }
 
+void entity_add_follow(Entity e, Entity target, vec3 offset) {
+    if (!entity_is_alive(e)) return;
+    registry.component_masks[e] |= COMPONENT_FOLLOW;
+    follow_pool[e].target = target;
+    follow_pool[e].offset[0] = offset[0];
+    follow_pool[e].offset[1] = offset[1];
+    follow_pool[e].offset[2] = offset[2];
+}
+
+void follow_system(float delta_time)
+{
+    for (Entity e = 0; e < MAX_ENTITIES; e++) {
+        if (!entity_is_alive(e)) continue;
+        if (registry.component_masks[e] & COMPONENT_FOLLOW) {
+            FollowComponent* follow = &follow_pool[e];
+            TransformComponent* cam_t = entity_get_transform(e);
+            CameraComponent* cam = entity_get_camera(e);
+            TransformComponent* target_t = entity_get_transform(follow->target);
+
+            if (!cam || !cam_t || !target_t) continue;
+
+            float yaw_rad = DEG2RAD(cam->yaw);
+            float pitch_rad = DEG2RAD(cam->pitch);
+
+            vec3 forward = {
+                cosf(pitch_rad) * sinf(yaw_rad),
+                sinf(pitch_rad),
+                cosf(pitch_rad) * cosf(yaw_rad)
+            };
+
+            float distance = 5.0f;
+            vec3 offset;
+            vec3_scale(offset, forward, -distance);
+            vec3_add(cam_t->position, target_t->position, offset);
+        }
+    }
+}
+
 void render_system(int width, int height)
 {
     sg_begin_pass(&(sg_pass){
@@ -185,47 +226,33 @@ void render_system(int width, int height)
     mat4x4 view, proj;
     bool camera_found = false;
 
-    // Search for a camera entity
     for (Entity e = 0; e < MAX_ENTITIES; e++) {
         if (!entity_is_alive(e)) {
             continue;
         }
-        // Does this entity have a CameraComponent?
         if (registry.component_masks[e] & COMPONENT_CAMERA) {
             CameraComponent* cam = &camera_pool[e];
             TransformComponent* ct = &transform_pool[e];
 
+            FollowComponent* follow = &follow_pool[e];
+            TransformComponent* target_t = entity_get_transform(follow->target);
+
+            if (!ct || !cam || !target_t) continue;
+
             vec3 position = {ct->position[0], ct->position[1], ct->position[2]};
-            
-            // Calculate front vector using spherical coordinates
-            float yaw_rad = DEG2RAD(cam->yaw);
-            float pitch_rad = DEG2RAD(cam->pitch);
-            vec3 front = {
-                cosf(pitch_rad) * sinf(yaw_rad),
-                sinf(pitch_rad),
-                cosf(pitch_rad) * cosf(yaw_rad)
-            };
-            
-            // Target = position + front
-            vec3 target;
-            vec3_add(target, position, front);
-            
-            // Up vector (world space)
+            vec3 target = {target_t->position[0], target_t->position[1], target_t->position[2]};
             vec3 up = {0.0f, 1.0f, 0.0f};
-            
-            // Directly create view matrix using look_at
+
             mat4x4_look_at(view, position, target, up);
 
-            // Keep existing projection code
             float fovy_rad = cam->fov * (3.1415926535f / 180.0f);
             mat4x4_perspective(proj, fovy_rad, cam->aspect, cam->near_plane, cam->far_plane);
-            
+
             camera_found = true;
-            break;            
+            break;
         }
     }
 
-    // If no camera is found, fall back to a default
     if (!camera_found) {
         vec3 eye    = { 0.0f, 2.0f, 5.0f };
         vec3 center = { 0.0f, 0.0f, 0.0f };
@@ -238,7 +265,6 @@ void render_system(int width, int height)
         mat4x4_perspective(proj, fovy_rad, aspect, 0.1f, 100.0f);
     }
 
-    // Now draw all entities that have both transform and render:
     for (Entity e = 0; e < MAX_ENTITIES; e++) {
         if (!entity_is_alive(e)) {
             continue;
@@ -250,22 +276,18 @@ void render_system(int width, int height)
             TransformComponent* t = &transform_pool[e];
             RenderComponent*    r = &render_pool[e];
 
-            // Build the model matrix from entity’s position/orientation/scale
             mat4x4 model;
             mat4x4_identity(model);
 
-            // Position
             mat4x4_translate_in_place(model,
                 t->position[0],
                 t->position[1],
                 t->position[2]);
 
-            // Orientation
             mat4x4 rot;
             mat4x4_from_quat(rot, t->rotation);
             mat4x4_mul(model, model, rot);
 
-            // Scale
             mat4x4 scale;
             mat4x4_identity(scale);
             scale[0][0] = t->scale[0];
@@ -273,12 +295,10 @@ void render_system(int width, int height)
             scale[2][2] = t->scale[2];
             mat4x4_mul(model, model, scale);
 
-            // Multiply with view, then projection to get final MVP
             mat4x4 mv, mvp;
             mat4x4_mul(mv, view, model);
             mat4x4_mul(mvp, proj, mv);
 
-            // Issue draw calls
             sg_apply_pipeline(r->pipeline);
             sg_apply_uniforms(0, &SG_RANGE(mvp));
             sg_bindings bind = {

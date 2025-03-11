@@ -22,4 +22,4 @@ void input_update(InputState* input);
 void input_get_movement_direction(const InputState* input, vec3 out_dir);
 void input_get_movement_vector(const InputState* input, float speed, vec3 out_vec, float yaw);
 
-void input_process(InputState* input, Entity camera, float delta_time);
+void input_process(InputState* input, Entity player, Entity camera, float delta_time);

@@ -18,7 +18,8 @@ typedef enum ComponentType {
     COMPONENT_NONE = 0,
     COMPONENT_TRANSFORM = 1 << 0,
     COMPONENT_RENDER = 1 << 1,
-    COMPONENT_CAMERA = 1 << 2
+    COMPONENT_CAMERA = 1 << 2,
+    COMPONENT_FOLLOW = 1 << 3
 } ComponentType;
 
 typedef struct {
@@ -42,6 +43,11 @@ typedef struct {
 } RenderComponent;
 
 typedef struct {
+    Entity target;
+    vec3 offset;
+} FollowComponent;
+
+typedef struct {
     float fov;         // Field of view in degrees (e.g. 45.0f)
     float aspect;      // Aspect ratio (width/height)
     float near_plane;  // Near clip plane
@@ -49,6 +55,7 @@ typedef struct {
     float pitch;
     float yaw;
 } CameraComponent;
+
 
 void ecs_init();
 
@@ -65,4 +72,7 @@ RenderComponent create_cube_render_component(void);
 void entity_add_camera(Entity e, float fov, float aspect, float near_plane, float far_plane);
 CameraComponent* entity_get_camera(Entity e);
 
+void entity_add_follow(Entity e, Entity target, vec3 offset);
+
+void follow_system(float delta_time);
 void render_system(int width, int height);

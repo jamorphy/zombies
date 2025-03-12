@@ -11,6 +11,7 @@
 
 #include "transform.h"
 #include "render.h"
+#include "camera.h"
 
 Registry registry = {0};
 static TransformComponent transform_pool[MAX_ENTITIES];
@@ -63,6 +64,8 @@ void* ecs_get_component(Entity e, ComponentType type)
     switch (type) {
         case COMPONENT_TRANSFORM: return &transform_pool[e];
         case COMPONENT_RENDER: return &render_pool[e];
+        case COMPONENT_CAMERA: return &camera_pool[e];
+        case COMPONENT_FOLLOW: return &follow_pool[e];
         // Other cases...
         default: return NULL;
     }
@@ -79,42 +82,14 @@ void ecs_set_component(Entity e, ComponentType type, void* component)
         case COMPONENT_RENDER:
             render_pool[e] = *(RenderComponent*)component;
             break;
+        case COMPONENT_CAMERA:
+            camera_pool[e] = *(CameraComponent*)component;
+            break;
+        case COMPONENT_FOLLOW:
+            follow_pool[e] = *(FollowComponent*)component;
+            break;
         // Other components...
     }
-}
-
-void entity_add_render(Entity e, RenderComponent component) {
-    if (!entity_is_alive(e)) return;
-
-    registry.component_masks[e] |= COMPONENT_RENDER;
-    render_pool[e] = component;
-}
-
-void entity_add_camera(Entity e, float fov, float aspect, float near_plane, float far_plane)
-{
-    if (!entity_is_alive(e)) return;
-    registry.component_masks[e] |= COMPONENT_CAMERA;
-    camera_pool[e].fov         = fov;
-    camera_pool[e].aspect      = aspect;
-    camera_pool[e].near_plane  = near_plane;
-    camera_pool[e].far_plane   = far_plane;
-}
-
-CameraComponent* entity_get_camera(Entity e)
-{
-    if (!entity_is_alive(e)) return NULL;
-    if (!(registry.component_masks[e] & COMPONENT_CAMERA)) return NULL;
-    return &camera_pool[e];
-}
-
-void entity_add_follow(Entity e, Entity target, vec3 offset)
-{
-    if (!entity_is_alive(e)) return;
-    registry.component_masks[e] |= COMPONENT_FOLLOW;
-    follow_pool[e].target = target;
-    follow_pool[e].offset[0] = offset[0];
-    follow_pool[e].offset[1] = offset[1];
-    follow_pool[e].offset[2] = offset[2];
 }
 
 void follow_system(float delta_time)

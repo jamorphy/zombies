@@ -29,22 +29,9 @@ typedef struct {
 
 extern Registry registry;
 
-typedef struct {
-    Entity target;
-    vec3 offset;
-} FollowComponent;
-
-typedef struct {
-    float fov;         // Field of view in degrees (e.g. 45.0f)
-    float aspect;      // Aspect ratio (width/height)
-    float near_plane;  // Near clip plane
-    float far_plane;   // Far clip plane
-    float pitch;
-    float yaw;
-} CameraComponent;
-
-//void entity_add_render(Entity e, RenderComponent component);
-
+/*
+  Create entity_get_component and entity_set_component
+ */
 #define ECS_COMPONENT_ACCESSORS(name, comp_type, comp_enum) \
     comp_type* entity_get_##name(Entity e) { \
         void* ptr = ecs_get_component(e, comp_enum); \
@@ -60,10 +47,8 @@ Entity entity_create();
 void entity_destroy(Entity e);
 bool entity_is_alive(Entity e);
 
-void entity_add_camera(Entity e, float fov, float aspect, float near_plane, float far_plane);
-CameraComponent* entity_get_camera(Entity e);
-
-void entity_add_follow(Entity e, Entity target, vec3 offset);
+//void entity_add_camera(Entity e, float fov, float aspect, float near_plane, float far_plane);
+//CameraComponent* entity_get_camera(Entity e);
 
 void follow_system(float delta_time);
 void render_system(int width, int height);

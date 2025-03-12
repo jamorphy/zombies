@@ -1,6 +1,7 @@
 #include "input.h"
 #include "ecs.h"
 #include "transform.h"
+#include "camera.h"
 #include "macros.h"
 #include <string.h>
 #include <stdio.h>

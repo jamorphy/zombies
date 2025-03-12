@@ -20,6 +20,7 @@
 #include "input.h"
 #include "gui.h"
 #include "render.h"
+#include "camera.h"
 
 static InputState g_input;
 static Entity player;
@@ -36,6 +37,7 @@ void init(void)
 
     cube = entity_create();
 
+    // Original cube
     Entity cube_e = entity_create();
     assert(entity_is_alive(cube_e));
     float rot[4] = {0.0f, 0.0f, 0.0f, 1.0f };
@@ -46,6 +48,46 @@ void init(void)
     entity_set_transform(cube_e, t);
     RenderComponent rcube = create_cube_render_component();
     entity_set_render(cube_e, rcube);
+
+    // New cube 1: Tall thin pillar
+    Entity cube1 = entity_create();
+    vec3 scale1 = {0.5f, 3.0f, 0.5f};  // Thin and tall
+    vec3 pos_c1 = {50.0f, 0.0f, 30.0f};  // Distance: ~58 units
+    TransformComponent t_c1 = { .position = {pos_c1[0], pos_c1[1], pos_c1[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale1[0], scale1[1], scale1[2]} };
+    entity_set_transform(cube1, t_c1);
+    entity_set_render(cube1, rcube);
+
+    // New cube 2: Wide flat platform
+    Entity cube2 = entity_create();
+    vec3 scale2 = {4.0f, 0.2f, 4.0f};  // Wide and flat
+    vec3 pos_c2 = {-30.0f, -1.0f, -40.0f};  // Distance: ~50 units
+    TransformComponent t_c2 = { .position = {pos_c2[0], pos_c2[1], pos_c2[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale2[0], scale2[1], scale2[2]} };
+    entity_set_transform(cube2, t_c2);
+    entity_set_render(cube2, rcube);
+
+    // New cube 3: Long wall
+    Entity cube3 = entity_create();
+    vec3 scale3 = {6.0f, 2.0f, 0.5f};  // Long and thin
+    vec3 pos_c3 = {20.0f, 0.0f, -60.0f};  // Distance: ~63 units
+    TransformComponent t_c3 = { .position = {pos_c3[0], pos_c3[1], pos_c3[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale3[0], scale3[1], scale3[2]} };
+    entity_set_transform(cube3, t_c3);
+    entity_set_render(cube3, rcube);
+
+    // New cube 4: Medium box
+    Entity cube4 = entity_create();
+    vec3 scale4 = {2.0f, 2.0f, 2.0f};  // Larger cube
+    vec3 pos_c4 = {-80.0f, 0.0f, 20.0f};  // Distance: ~82 units
+    TransformComponent t_c4 = { .position = {pos_c4[0], pos_c4[1], pos_c4[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale4[0], scale4[1], scale4[2]} };
+    entity_set_transform(cube4, t_c4);
+    entity_set_render(cube4, rcube);
+
+    // New cube 5: Small floating block
+    Entity cube5 = entity_create();
+    vec3 scale5 = {0.7f, 0.7f, 0.7f};  // Small cube
+    vec3 pos_c5 = {10.0f, 5.0f, 50.0f};  // Distance: ~51 units
+    TransformComponent t_c5 = { .position = {pos_c5[0], pos_c5[1], pos_c5[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale5[0], scale5[1], scale5[2]} };
+    entity_set_transform(cube5, t_c5);
+    entity_set_render(cube5, rcube);
 
     // Player entity (cube)
     player = entity_create();
@@ -69,13 +111,14 @@ void init(void)
     TransformComponent t2 = { .position = {initial_camera_pos[0], initial_camera_pos[1], initial_camera_pos[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale[0], scale[1], scale[2]} };
     entity_set_transform(camera, t2);
     float screen_aspect = (float)sapp_width() / (float)sapp_height();
-    entity_add_camera(camera, 80.0f, screen_aspect, 0.1f, 1000.0f);
-    // Offset: above and behind
-    entity_add_follow(camera, player, (vec3){offset_x, offset_y, offset_z});
+    CameraComponent cam = { .fov = 80.0f, .aspect = screen_aspect, .near_plane = 0.1f, .far_plane = 1000.0f, .pitch = 0.0f, .yaw = -90.0f };
+    entity_set_camera(camera, cam);
 
-    CameraComponent* cam = entity_get_camera(camera);
-    cam->yaw = -90.0f;
-    cam->pitch = 0.0f;
+    // Offset: above and behind
+    FollowComponent fol = { .target = player, .offset = {offset_x, offset_y, offset_z }};
+    entity_set_follow(camera, fol);
+
+    //CameraComponent* cam = entity_get_camera(camera);
 
     snk_setup(&(snk_desc_t){0});
     nk_style_hide_cursor(snk_new_frame());

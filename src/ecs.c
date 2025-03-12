@@ -9,7 +9,10 @@
 
 #include "cube.glsl.h"
 
-static Registry registry = {0};
+#include "transform.h"
+#include "render.h"
+
+Registry registry = {0};
 static TransformComponent transform_pool[MAX_ENTITIES];
 static RenderComponent render_pool[MAX_ENTITIES];
 static CameraComponent camera_pool[MAX_ENTITIES];
@@ -46,38 +49,38 @@ void entity_destroy(Entity e)
     registry.entity_count--;
 }
 
-void entity_add_transform(Entity e, vec3 pos, quat rot, vec3 scale)
+bool entity_is_alive(Entity e)
 {
-    if (!entity_is_alive(e)) return;
-
-    registry.component_masks[e] |= COMPONENT_TRANSFORM;
-
-    transform_pool[e].position[0] = pos[0];
-    transform_pool[e].position[1] = pos[1];
-    transform_pool[e].position[2] = pos[2];
-
-    transform_pool[e].rotation[0] = rot[0];
-    transform_pool[e].rotation[1] = rot[1];
-    transform_pool[e].rotation[2] = rot[2];
-    transform_pool[e].rotation[3] = rot[3];
-
-    transform_pool[e].scale[0] = scale[0];
-    transform_pool[e].scale[1] = scale[1];
-    transform_pool[e].scale[2] = scale[2];
-}
-
-bool entity_is_alive(Entity e) {
     // 1. Entity index within bounds
     // 2. Not marked as invalid
     // 3. Alive flag is true
     return (e < MAX_ENTITIES) && (e != INVALID_ENTITY) && registry.alive[e];
 }
 
-TransformComponent* entity_get_transform(Entity e)
+void* ecs_get_component(Entity e, ComponentType type)
 {
-    if (!entity_is_alive(e)) return NULL;
-    if (!(registry.component_masks[e] & COMPONENT_TRANSFORM)) return NULL;
-    return &transform_pool[e];
+    if (!entity_is_alive(e) || !(registry.component_masks[e] & type)) return NULL;
+    switch (type) {
+        case COMPONENT_TRANSFORM: return &transform_pool[e];
+        case COMPONENT_RENDER: return &render_pool[e];
+        // Other cases...
+        default: return NULL;
+    }
+}
+
+void ecs_set_component(Entity e, ComponentType type, void* component)
+{
+    if (!entity_is_alive(e)) return;
+    registry.component_masks[e] |= type;
+    switch (type) {
+        case COMPONENT_TRANSFORM:
+            transform_pool[e] = *(TransformComponent*)component;
+            break;
+        case COMPONENT_RENDER:
+            render_pool[e] = *(RenderComponent*)component;
+            break;
+        // Other components...
+    }
 }
 
 void entity_add_render(Entity e, RenderComponent component) {
@@ -85,68 +88,6 @@ void entity_add_render(Entity e, RenderComponent component) {
 
     registry.component_masks[e] |= COMPONENT_RENDER;
     render_pool[e] = component;
-}
-
-RenderComponent create_cube_render_component(void) {
-    static float vertices[] = {
-        // positions      // colors (RGBA)
-        // front
-        -1, -1,  1,   1,0,0,1,
-         1, -1,  1,   0,1,0,1,
-         1,  1,  1,   0,0,1,1,
-        -1,  1,  1,   1,1,0,1,
-        // back
-        -1, -1, -1,   1,0,1,1,
-         1, -1, -1,   0,1,1,1,
-         1,  1, -1,   0.5f,0.5f,0.5f,1,
-        -1,  1, -1,   0,0,0,1
-    };
-    static uint16_t indices[] = {
-        // front
-        0,1,2,  0,2,3,
-        // right
-        1,5,6,  1,6,2,
-        // back
-        5,4,7,  5,7,6,
-        // left
-        4,0,3,  4,3,7,
-        // bottom
-        4,5,1,  4,1,0,
-        // top
-        3,2,6,  3,6,7
-    };
-
-    RenderComponent rc = {0};
-
-    rc.vertex_buffer = sg_make_buffer(&(sg_buffer_desc){
-        .data  = SG_RANGE(vertices),
-        .label = "cube-vertices"
-    });
-    rc.index_buffer = sg_make_buffer(&(sg_buffer_desc){
-        .type  = SG_BUFFERTYPE_INDEXBUFFER,
-        .data  = SG_RANGE(indices),
-        .label = "cube-indices"
-    });
-    rc.index_count = sizeof(indices)/sizeof(indices[0]);
-
-    sg_shader shd = sg_make_shader(cube_shader_desc(sg_query_backend()));
-
-    rc.pipeline = sg_make_pipeline(&(sg_pipeline_desc){
-        .shader = shd,
-        .layout = {
-            .attrs[0] = { .format = SG_VERTEXFORMAT_FLOAT3 },
-            .attrs[1] = { .format = SG_VERTEXFORMAT_FLOAT4 },
-        },
-        .index_type = SG_INDEXTYPE_UINT16,
-        .cull_mode  = SG_CULLMODE_FRONT,
-        .depth = {
-            .compare = SG_COMPAREFUNC_LESS_EQUAL,
-            .write_enabled = true
-        },
-        .label = "cube-pipeline"
-    });
-
-    return rc;
 }
 
 void entity_add_camera(Entity e, float fov, float aspect, float near_plane, float far_plane)
@@ -166,7 +107,8 @@ CameraComponent* entity_get_camera(Entity e)
     return &camera_pool[e];
 }
 
-void entity_add_follow(Entity e, Entity target, vec3 offset) {
+void entity_add_follow(Entity e, Entity target, vec3 offset)
+{
     if (!entity_is_alive(e)) return;
     registry.component_masks[e] |= COMPONENT_FOLLOW;
     follow_pool[e].target = target;
@@ -206,20 +148,6 @@ void follow_system(float delta_time)
 
 void render_system(int width, int height)
 {
-    sg_begin_pass(&(sg_pass){
-        .action = {
-            .colors[0] = {
-                .load_action = SG_LOADACTION_CLEAR,
-                .clear_value = { 0.25f, 0.5f, 0.75f, 1.0f }
-            },
-            .depth = {
-                .load_action = SG_LOADACTION_CLEAR,
-                .clear_value = 1.0f
-            }
-        },
-        .swapchain = sglue_swapchain()
-    });
-
     mat4x4 view, proj;
     bool camera_found = false;
 
@@ -306,7 +234,5 @@ void render_system(int width, int height)
             sg_draw(0, r->index_count, 1);
         }
     }
-
-    sg_end_pass();
-    sg_commit();
 }
+

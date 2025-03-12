@@ -27,19 +27,7 @@ typedef struct {
     uint32_t entity_count;            // Active entities
 } Registry;
 
-typedef struct {
-    vec3 position;
-    quat rotation;
-    vec3 scale;
-} TransformComponent;
-
-typedef struct {
-    sg_buffer vertex_buffer;
-    sg_buffer index_buffer;
-    sg_pipeline pipeline;
-    int index_count;
-    // TODO: texture handles or Material component
-} RenderComponent;
+extern Registry registry;
 
 typedef struct {
     Entity target;
@@ -55,18 +43,22 @@ typedef struct {
     float yaw;
 } CameraComponent;
 
+//void entity_add_render(Entity e, RenderComponent component);
+
+#define ECS_COMPONENT_ACCESSORS(name, comp_type, comp_enum) \
+    comp_type* entity_get_##name(Entity e) { \
+        void* ptr = ecs_get_component(e, comp_enum); \
+        return (comp_type*)ptr; \
+    } \
+    void entity_set_##name(Entity e, comp_type component) { \
+        ecs_set_component(e, comp_enum, &component); \
+    }
 
 void ecs_init();
 
 Entity entity_create();
 void entity_destroy(Entity e);
 bool entity_is_alive(Entity e);
-
-TransformComponent* entity_get_transform(Entity e);
-void entity_add_transform(Entity e, vec3 pos, quat rot, vec3 scale);
-void entity_add_render(Entity e, RenderComponent component);
-
-RenderComponent create_cube_render_component(void);
 
 void entity_add_camera(Entity e, float fov, float aspect, float near_plane, float far_plane);
 CameraComponent* entity_get_camera(Entity e);
@@ -75,3 +67,8 @@ void entity_add_follow(Entity e, Entity target, vec3 offset);
 
 void follow_system(float delta_time);
 void render_system(int width, int height);
+
+void* ecs_get_component(Entity e, ComponentType type);
+void ecs_set_component(Entity e, ComponentType type, void* component);
+
+//RenderComponent create_cube_render_component(void);

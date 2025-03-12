@@ -7,7 +7,6 @@ OBJC_FLAGS = -fobjc-arc
 INCLUDES = -I$(CURDIR)/libs/sokol \
            -I$(CURDIR)/libs/nuklear \
            -I$(CURDIR)/libs/linmath \
-           -I$(CURDIR)/libs/cJSON
 
 FRAMEWORKS = -framework Metal -framework MetalKit \
              -framework Cocoa -framework AudioToolbox \
@@ -21,7 +20,7 @@ DEBUG_FLAGS  = -g -O0 -DDEBUG
 #-----------------------------------------------------------------
 # Source Files
 #-----------------------------------------------------------------
-SRC_C_FILES  = main.c ecs.c input.c
+SRC_C_FILES  = main.c ecs.c input.c gui.c transform.c render.c math_utils.c
 SOKOL_FILES  = sokol.m        # for native Metal
 
 SOKOL_C_FILES = sokol.c
@@ -33,8 +32,8 @@ SOKOL_PATHS  = $(addprefix libs/sokol/,$(SOKOL_FILES))
 OBJS = $(SRC_C_FILES:%.c=$(OBJ_DIR)/src/%.o)
 OBJS += $(SOKOL_FILES:%.m=$(OBJ_DIR)/libs/sokol/%.o)
 
-SHADER_IN  = src/shaders/cube-sapp.glsl
-SHADER_OUT = src/cube-sapp.glsl.h
+SHADER_IN  = src/shaders/cube.glsl
+SHADER_OUT = src/cube.glsl.h
 
 # We want both metal_macos (native) and glsl300es (web)
 SHDC_FLAGS = --slang=metal_macos:glsl300es
@@ -69,10 +68,6 @@ $(OBJ_DIR)/src/main.o: src/main.c $(SHADER_OUT) | directories
 $(OBJ_DIR)/libs/sokol/%.o: libs/sokol/%.m | directories
 	$(CC) $(CFLAGS) $(INCLUDES) $(OBJC_FLAGS) -c $< -o $@
 
-# cJSON
-$(OBJ_DIR)/libs/cJSON/%.o: libs/cJSON/%.c | directories
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
-
 #-----------------------------------------------------------------
 # Native Build (Metal)
 #-----------------------------------------------------------------
@@ -96,7 +91,6 @@ directories:
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(OBJ_DIR)/src
 	@mkdir -p $(OBJ_DIR)/libs/sokol
-	@mkdir -p $(OBJ_DIR)/libs/cJSON
 
 clean:
 	rm -rf $(BUILD_DIR)

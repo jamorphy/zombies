@@ -12,9 +12,14 @@
 #include "sokol_gfx.h"
 #include "sokol_glue.h"
 #include "sokol_log.h"
+#include "../libs/nuklear/nuklear.h"
+#include "../libs/sokol/sokol_nuklear.h"
 
 #include "ecs.h"
+#include "transform.h"
 #include "input.h"
+#include "gui.h"
+#include "render.h"
 
 static InputState g_input;
 static Entity player;
@@ -33,15 +38,20 @@ void init(void)
 
     Entity cube_e = entity_create();
     assert(entity_is_alive(cube_e));
-    float q[4] = {0.0f, 0.0f, 0.0f, 1.0f };
-    entity_add_transform(cube_e, (vec3){0, 0, -20}, q, (vec3){1,0.6,1});
+    float rot[4] = {0.0f, 0.0f, 0.0f, 1.0f };
+    vec3 scale = {1, 1, 1};
+    vec3 pos1 = { 0, 0, 20 };
+    vec3 pos2 = { 0, 0, 0 };
+    TransformComponent t = { .position = {pos1[0], pos1[1], pos1[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale[0], scale[1], scale[2]} };
+    entity_set_transform(cube_e, t);
     RenderComponent rcube = create_cube_render_component();
-    entity_add_render(cube_e, rcube);
+    entity_set_render(cube_e, rcube);
 
     // Player entity (cube)
     player = entity_create();
-    entity_add_transform(player, (vec3){0, 0, 0}, q, (vec3){1, 1, 1});
-    entity_add_render(player, rcube);
+    TransformComponent t1 = { .position = {pos2[0], pos2[1], pos2[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale[0], scale[1], scale[2]} };
+    entity_set_transform(player, t1);
+    entity_set_render(player, rcube);
 
     camera = entity_create();
 
@@ -56,7 +66,8 @@ void init(void)
         player_t->position[2] + offset_z,
     };
 
-    entity_add_transform(camera, initial_camera_pos, q, (vec3){1, 1, 1});
+    TransformComponent t2 = { .position = {initial_camera_pos[0], initial_camera_pos[1], initial_camera_pos[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale[0], scale[1], scale[2]} };
+    entity_set_transform(camera, t2);
     float screen_aspect = (float)sapp_width() / (float)sapp_height();
     entity_add_camera(camera, 80.0f, screen_aspect, 0.1f, 1000.0f);
     // Offset: above and behind
@@ -65,10 +76,14 @@ void init(void)
     CameraComponent* cam = entity_get_camera(camera);
     cam->yaw = -90.0f;
     cam->pitch = 0.0f;
+
+    snk_setup(&(snk_desc_t){0});
+    nk_style_hide_cursor(snk_new_frame());
 }
 
 void input(const sapp_event* ev)
 {
+    snk_handle_event(ev);
     input_handle_event(&g_input, ev);
 }
 
@@ -77,7 +92,27 @@ void frame(void)
     float delta_time = sapp_frame_duration();
     input_process(&g_input, player, camera, delta_time);
     follow_system(delta_time);
+
+    sg_begin_pass(&(sg_pass){
+        .action = {
+            .colors[0] = {
+                .load_action = SG_LOADACTION_CLEAR,
+                .clear_value = { 0.25f, 0.5f, 0.75f, 1.0f }
+            },
+            .depth = {
+                .load_action = SG_LOADACTION_CLEAR,
+                .clear_value = 1.0f
+            }
+        },
+        .swapchain = sglue_swapchain()
+    });
+    
     render_system(sapp_width(), sapp_height());
+    gui_render(player);
+
+    snk_render(sapp_width(),sapp_height());
+    sg_end_pass();
+    sg_commit();
 }
 
 void cleanup(void)

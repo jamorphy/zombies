@@ -28,6 +28,8 @@ static Entity player;
 static Entity camera;
 static Entity cube;
 
+static int frame_count;
+
 void cleanup(void);
 
 void init(void)
@@ -140,6 +142,7 @@ void input(const sapp_event* ev)
 
 void frame(void)
 {
+    frame_count++;
     float delta_time = sapp_frame_duration();
     input_process(&g_input, player, camera, delta_time);
     physics_system_update(delta_time);

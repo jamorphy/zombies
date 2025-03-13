@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <math.h>
 
-static const float MOVE_SPEED   = 2.5f;
+static const float MOVE_SPEED   = 6.0f;
 static const float MOUSE_SENSITIVITY = 0.2f;
 static const float MAX_PITCH    = 89.0f;      // lock pitch to avoid flipping the camera
 

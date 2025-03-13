@@ -12,12 +12,14 @@
 #include "transform.h"
 #include "render.h"
 #include "camera.h"
+#include "physics.h"
 
 Registry registry = {0};
 static TransformComponent transform_pool[MAX_ENTITIES];
 static RenderComponent render_pool[MAX_ENTITIES];
 static CameraComponent camera_pool[MAX_ENTITIES];
 static FollowComponent follow_pool[MAX_ENTITIES];
+static CollisionComponent collision_pool[MAX_ENTITIES];
 
 void ecs_init()
 {
@@ -26,6 +28,7 @@ void ecs_init()
     memset(&render_pool, 0, sizeof(render_pool));
     memset(&camera_pool, 0, sizeof(camera_pool));
     memset(&follow_pool, 0, sizeof(follow_pool));
+    memset(&collision_pool, 0, sizeof(collision_pool));
 }
 
 Entity entity_create()
@@ -66,6 +69,7 @@ void* ecs_get_component(Entity e, ComponentType type)
         case COMPONENT_RENDER: return &render_pool[e];
         case COMPONENT_CAMERA: return &camera_pool[e];
         case COMPONENT_FOLLOW: return &follow_pool[e];
+        case COMPONENT_COLLISION: return &collision_pool[e];
         // Other cases...
         default: return NULL;
     }
@@ -87,6 +91,9 @@ void ecs_set_component(Entity e, ComponentType type, void* component)
             break;
         case COMPONENT_FOLLOW:
             follow_pool[e] = *(FollowComponent*)component;
+            break;
+        case COMPONENT_COLLISION:
+            collision_pool[e] = *(CollisionComponent*)component;
             break;
         // Other components...
     }

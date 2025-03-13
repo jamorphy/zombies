@@ -11,6 +11,8 @@ typedef struct {
     // TODO: texture handles or Material component
 } RenderComponent;
 
+extern sg_shader cube_shader;
+extern sg_pipeline cube_pipeline;
 
 RenderComponent* entity_get_render(Entity e);
 void entity_set_render(Entity e, RenderComponent component);

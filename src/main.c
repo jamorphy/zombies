@@ -30,6 +30,10 @@ static Entity cube;
 
 static int frame_count;
 
+// TODO: render manager
+extern sg_shader cube_shader;
+extern sg_pipeline cube_pipeline;
+
 void cleanup(void);
 
 void init(void)
@@ -171,6 +175,8 @@ void frame(void)
 
 void cleanup(void)
 {
+    sg_destroy_shader(cube_shader);
+    sg_destroy_pipeline(cube_pipeline);
     sg_shutdown();
 }
 

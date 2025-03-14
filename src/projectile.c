@@ -4,33 +4,30 @@
 #include "physics.h"
 #include "render.h"
 #include "macros.h"
+#include "event.h"
 
 ECS_COMPONENT_ACCESSORS(projectile, ProjectileComponent, COMPONENT_PROJECTILE)
 
-void create_projectile(Entity shooter, Entity camera_entity)
+static void on_shoot(void* data)
 {
+    ShootEvent* ev = (ShootEvent*)data;
+    create_projectile(ev->shooter, ev->position, ev->direction);
+}
+
+void projectile_init(void)
+{
+    event_register(EVENT_SHOOT, on_shoot); // pass func ptr for on_shoot
+}
+
+void create_projectile(Entity shooter, vec3 position, vec3 direction) {
     Entity projectile = entity_create();
     if (projectile == INVALID_ENTITY) return;
 
-    TransformComponent* player_t = entity_get_transform(shooter);
-    CameraComponent* cam = entity_get_camera(camera_entity);
-
-    // Calculate spawn position: offset from player center along camera forward direction
-    float yaw_rad = DEG2RAD(cam->yaw);
-    float pitch_rad = DEG2RAD(cam->pitch);
-    vec3 forward = {
-        cosf(pitch_rad) * sinf(yaw_rad),
-        sinf(pitch_rad),
-        cosf(pitch_rad) * cosf(yaw_rad)
-    };
-    vec3_norm(forward, forward); // Ensure unit vector
-
-    // Offset by player size (assuming scale {1, 1, 1} and collision size {1, 1, 1}) plus buffer
-    float offset_distance = 1.5f; // Player half-size (0.5) + projectile half-size (0.1) + buffer
+    // Offset projectile from shooter position along direction
     vec3 offset;
-    vec3_scale(offset, forward, offset_distance);
+    vec3_scale(offset, direction, 1.5f); // 1.5f = shooter half-size + buffer
     vec3 projectile_pos;
-    vec3_add(projectile_pos, player_t->position, offset);
+    vec3_add(projectile_pos, position, offset);
 
     vec3 scale = {0.2f, 0.2f, 0.2f};
     float rot[4] = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -41,10 +38,9 @@ void create_projectile(Entity shooter, Entity camera_entity)
     };
     entity_set_transform(projectile, t);
 
-    // Velocity: Same forward direction, just faster
     float speed = 20.0f;
     vec3 velocity;
-    vec3_scale(velocity, forward, speed);
+    vec3_scale(velocity, direction, speed);
     VelocityComponent v = { .velocity = {velocity[0], velocity[1], velocity[2]} };
     entity_set_velocity(projectile, v);
 
@@ -66,15 +62,17 @@ void create_projectile(Entity shooter, Entity camera_entity)
         4,5,1,  4,1,0,
         3,2,6,  3,6,7
     };
-
-    RenderComponent cube_rc = create_render_component(
+    RenderComponent rc = create_render_component(
         vertices, sizeof(vertices),
         indices, sizeof(indices) / sizeof(indices[0])
     );
+    entity_set_render(projectile, rc);
 
-    entity_set_render(projectile, cube_rc);
-
-    CollisionComponent c = { .size = {1.0f, 1.0f, 1.0f}, .center_offset = {0, 0, 0}, .is_static = false };
+    CollisionComponent c = {
+        .size = {1.0f, 1.0f, 1.0f},
+        .center_offset = {0, 0, 0},
+        .is_static = false
+    };
     entity_set_collision(projectile, c);
 
     ProjectileComponent p = { .owner = shooter };

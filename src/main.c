@@ -22,6 +22,8 @@
 #include "render.h"
 #include "camera.h"
 #include "physics.h"
+#include "event.h"
+#include "projectile.h"
 
 static InputState g_input;
 static Entity player;
@@ -40,6 +42,8 @@ void init(void)
 {
     sg_setup(&(sg_desc){ .environment = sglue_environment(), .logger.func = slog_func });
     ecs_init();
+    event_init();
+    projectile_init();
     input_init(&g_input);
 
     cube = entity_create();

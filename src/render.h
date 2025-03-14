@@ -17,4 +17,4 @@ extern sg_pipeline cube_pipeline;
 RenderComponent* entity_get_render(Entity e);
 void entity_set_render(Entity e, RenderComponent component);
 
-RenderComponent create_cube_render_component(void);
+RenderComponent create_render_component(const float* vertices, size_t vertex_size, const uint16_t* indices, size_t index_count);

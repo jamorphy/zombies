@@ -31,6 +31,8 @@ bool physics_check_aabb_collision(const vec3 min1, const vec3 max1, const vec3 m
            (min1[2] <= max2[2] && max1[2] >= min2[2]);
 }
 
+
+// TODO: Grid partitioning collision check
 void physics_system_update(float delta_time)
 {
     // Step 1: Update positions for entities with VelocityComponent

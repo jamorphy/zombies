@@ -44,6 +44,30 @@ void init(void)
 
     cube = entity_create();
 
+    static float vertices[] = {
+        -1, -1,  1,   1,0,0,1,
+         1, -1,  1,   0,1,0,1,
+         1,  1,  1,   0,0,1,1,
+        -1,  1,  1,   1,1,0,1,
+        -1, -1, -1,   1,0,1,1,
+         1, -1, -1,   0,1,1,1,
+         1,  1, -1,   0.5f,0.5f,0.5f,1,
+        -1,  1, -1,   0,0,0,1
+    };
+    static uint16_t indices[] = {
+        0,1,2,  0,2,3,
+        1,5,6,  1,6,2,
+        5,4,7,  5,7,6,
+        4,0,3,  4,3,7,
+        4,5,1,  4,1,0,
+        3,2,6,  3,6,7
+    };
+
+    RenderComponent cube_rc = create_render_component(
+        vertices, sizeof(vertices),
+        indices, sizeof(indices) / sizeof(indices[0])
+    );
+
     // Original cube
     Entity cube_e = entity_create();
     assert(entity_is_alive(cube_e));
@@ -53,8 +77,7 @@ void init(void)
     vec3 pos2 = { 0, 0, 0 };
     TransformComponent t = { .position = {pos1[0], pos1[1], pos1[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale[0], scale[1], scale[2]} };
     entity_set_transform(cube_e, t);
-    RenderComponent rcube = create_cube_render_component();
-    entity_set_render(cube_e, rcube);
+    entity_set_render(cube_e, cube_rc);
     entity_set_collision(cube_e, (CollisionComponent){.size = {1, 1, 1}, .center_offset = {0, 0, 0}, .is_static = true});
 
     // New cube 1: Tall thin pillar
@@ -63,7 +86,7 @@ void init(void)
     vec3 pos_c1 = {50.0f, 0.0f, 30.0f};  // Distance: ~58 units
     TransformComponent t_c1 = { .position = {pos_c1[0], pos_c1[1], pos_c1[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale1[0], scale1[1], scale1[2]} };
     entity_set_transform(cube1, t_c1);
-    entity_set_render(cube1, rcube);
+    entity_set_render(cube1, cube_rc);
     entity_set_collision(cube1, (CollisionComponent){.size = {1, 1, 1}, .center_offset = {0, 0, 0}, .is_static = true});
 
     // New cube 2: Wide flat platform
@@ -72,7 +95,7 @@ void init(void)
     vec3 pos_c2 = {-30.0f, -1.0f, -40.0f};  // Distance: ~50 units
     TransformComponent t_c2 = { .position = {pos_c2[0], pos_c2[1], pos_c2[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale2[0], scale2[1], scale2[2]} };
     entity_set_transform(cube2, t_c2);
-    entity_set_render(cube2, rcube);
+    entity_set_render(cube2, cube_rc);
     entity_set_collision(cube2, (CollisionComponent){.size = {1, 1, 1}, .center_offset = {0, 0, 0}, .is_static = true});
 
     // New cube 3: Long wall
@@ -81,7 +104,7 @@ void init(void)
     vec3 pos_c3 = {20.0f, 0.0f, -60.0f};  // Distance: ~63 units
     TransformComponent t_c3 = { .position = {pos_c3[0], pos_c3[1], pos_c3[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale3[0], scale3[1], scale3[2]} };
     entity_set_transform(cube3, t_c3);
-    entity_set_render(cube3, rcube);
+    entity_set_render(cube3, cube_rc);
     entity_set_collision(cube3, (CollisionComponent){.size = {1, 1, 1}, .center_offset = {0, 0, 0}, .is_static = true});
 
     // New cube 4: Medium box
@@ -90,7 +113,7 @@ void init(void)
     vec3 pos_c4 = {-80.0f, 0.0f, 20.0f};  // Distance: ~82 units
     TransformComponent t_c4 = { .position = {pos_c4[0], pos_c4[1], pos_c4[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale4[0], scale4[1], scale4[2]} };
     entity_set_transform(cube4, t_c4);
-    entity_set_render(cube4, rcube);
+    entity_set_render(cube4, cube_rc);
     entity_set_collision(cube4, (CollisionComponent){.size = {1, 1, 1}, .center_offset = {0, 0, 0}, .is_static = true});
 
     // New cube 5: Small floating block
@@ -99,14 +122,14 @@ void init(void)
     vec3 pos_c5 = {10.0f, 5.0f, 50.0f};  // Distance: ~51 units
     TransformComponent t_c5 = { .position = {pos_c5[0], pos_c5[1], pos_c5[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale5[0], scale5[1], scale5[2]} };
     entity_set_transform(cube5, t_c5);
-    entity_set_render(cube5, rcube);
+    entity_set_render(cube5, cube_rc);
     entity_set_collision(cube5, (CollisionComponent){.size = {1, 1, 1}, .center_offset = {0, 0, 0}, .is_static = true});
 
     // Player entity (cube)
     player = entity_create();
     TransformComponent t1 = { .position = {pos2[0], pos2[1], pos2[2]}, .rotation = {rot[0], rot[1], rot[2], rot[3]}, .scale = {scale[0], scale[1], scale[2]} };
     entity_set_transform(player, t1);
-    entity_set_render(player, rcube);
+    entity_set_render(player, cube_rc);
     entity_set_collision(player, (CollisionComponent){.size = {1, 1, 1}, .center_offset = {0, 0, 0}, .is_static = false});
 
     camera = entity_create();

@@ -48,8 +48,31 @@ void create_projectile(Entity shooter, Entity camera_entity)
     VelocityComponent v = { .velocity = {velocity[0], velocity[1], velocity[2]} };
     entity_set_velocity(projectile, v);
 
-    RenderComponent rcube = create_cube_render_component();
-    entity_set_render(projectile, rcube);
+    static float vertices[] = {
+        -1, -1,  1,   1,0,0,1,
+         1, -1,  1,   0,1,0,1,
+         1,  1,  1,   0,0,1,1,
+        -1,  1,  1,   1,1,0,1,
+        -1, -1, -1,   1,0,1,1,
+         1, -1, -1,   0,1,1,1,
+         1,  1, -1,   0.5f,0.5f,0.5f,1,
+        -1,  1, -1,   0,0,0,1
+    };
+    static uint16_t indices[] = {
+        0,1,2,  0,2,3,
+        1,5,6,  1,6,2,
+        5,4,7,  5,7,6,
+        4,0,3,  4,3,7,
+        4,5,1,  4,1,0,
+        3,2,6,  3,6,7
+    };
+
+    RenderComponent cube_rc = create_render_component(
+        vertices, sizeof(vertices),
+        indices, sizeof(indices) / sizeof(indices[0])
+    );
+
+    entity_set_render(projectile, cube_rc);
 
     CollisionComponent c = { .size = {1.0f, 1.0f, 1.0f}, .center_offset = {0, 0, 0}, .is_static = false };
     entity_set_collision(projectile, c);

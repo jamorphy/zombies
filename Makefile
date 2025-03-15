@@ -20,7 +20,7 @@ DEBUG_FLAGS  = -g -O0 -DDEBUG
 #-----------------------------------------------------------------
 # Source Files
 #-----------------------------------------------------------------
-SRC_C_FILES  = main.c ecs.c input.c gui.c transform.c render.c math_utils.c
+SRC_C_FILES  = main.c ecs.c input.c gui.c transform.c render.c math_utils.c camera.c physics.c
 SOKOL_FILES  = sokol.m        # for native Metal
 
 SOKOL_C_FILES = sokol.c
@@ -46,7 +46,7 @@ WEB_TARGET      = $(BUILD_DIR)/demo.html
 
 .PHONY: all native web clean directories
 
-all: native web # default
+all: native # default
 
 debug: CFLAGS += $(DEBUG_FLAGS)
 debug: native

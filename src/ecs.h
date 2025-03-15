@@ -18,7 +18,8 @@ typedef enum ComponentType {
     COMPONENT_TRANSFORM = 1 << 0,
     COMPONENT_RENDER = 1 << 1,
     COMPONENT_CAMERA = 1 << 2,
-    COMPONENT_FOLLOW = 1 << 3
+    COMPONENT_FOLLOW = 1 << 3,
+    COMPONENT_COLLISION = 1 << 4
 } ComponentType;
 
 typedef struct {
@@ -47,13 +48,8 @@ Entity entity_create();
 void entity_destroy(Entity e);
 bool entity_is_alive(Entity e);
 
-//void entity_add_camera(Entity e, float fov, float aspect, float near_plane, float far_plane);
-//CameraComponent* entity_get_camera(Entity e);
-
 void follow_system(float delta_time);
 void render_system(int width, int height);
 
 void* ecs_get_component(Entity e, ComponentType type);
 void ecs_set_component(Entity e, ComponentType type, void* component);
-
-//RenderComponent create_cube_render_component(void);

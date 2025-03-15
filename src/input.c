@@ -4,6 +4,7 @@
 #include "camera.h"
 #include "macros.h"
 #include "projectile.h"
+#include "event.h"
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -125,8 +126,23 @@ void input_process(InputState* input, Entity player, Entity camera, float delta_
     vec3_add(t->position, t->position, move_input);
 
     if (input->keys[SAPP_KEYCODE_SPACE]) {
-        create_projectile(player, camera);
-        input->keys[SAPP_KEYCODE_SPACE] = false;
+        // Compute forward direction from camera
+        float yaw_rad = DEG2RAD(cam->yaw);
+        float pitch_rad = DEG2RAD(cam->pitch);
+        vec3 forward = {
+            cosf(pitch_rad) * sinf(yaw_rad),
+            sinf(pitch_rad),
+            cosf(pitch_rad) * cosf(yaw_rad)
+        };
+        vec3_norm(forward, forward);
+
+        ShootEvent ev = {
+            .shooter = player,
+            .position = { t->position[0], t->position[1], t->position[2] },
+            .direction = { forward[0], forward[1], forward[2] }
+        };
+        event_send(EVENT_SHOOT, &ev);
+        input->keys[SAPP_KEYCODE_SPACE] = false; // Debounce
     }
 
     input->mouse_dx = 0.0;

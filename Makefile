@@ -20,7 +20,7 @@ DEBUG_FLAGS  = -g -O0 -DDEBUG
 #-----------------------------------------------------------------
 # Source Files
 #-----------------------------------------------------------------
-SRC_C_FILES  = main.c ecs.c input.c gui.c transform.c render.c math_utils.c camera.c physics.c projectile.c
+SRC_C_FILES  = main.c ecs.c input.c gui.c transform.c render.c math_utils.c camera.c physics.c projectile.c event.c
 SOKOL_FILES  = sokol.m        # for native Metal
 
 SOKOL_C_FILES = sokol.c

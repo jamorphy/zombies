@@ -83,25 +83,37 @@ void physics_system_update(float delta_time)
         CollisionComponent* c1 = entity_get_collision(e1);
         TransformComponent* t1 = entity_get_transform(e1);
         ProjectileComponent* p1 = entity_get_projectile(e1);
+        DamageComponent* d1 = entity_get_damage(e1);
+        HealthComponent* h1 = entity_get_health(e1);
 
         for (Entity e2 = e1 + 1; e2 < MAX_ENTITIES; e2++) {
             if (!entity_is_alive(e2) || !(registry.component_masks[e2] & COMPONENT_COLLISION)) continue;
             CollisionComponent* c2 = entity_get_collision(e2);
             TransformComponent* t2 = entity_get_transform(e2);
             ProjectileComponent* p2 = entity_get_projectile(e2);
+            DamageComponent* d2 = entity_get_damage(e2);
+            HealthComponent* h2 = entity_get_health(e2);
 
             if (physics_check_aabb_collision(c1->min, c1->max, c2->min, c2->max)) {
                 // Check if e1 is a projectile and e2 is not its owner
                 if (p1 && (!p2 || p1->owner != e2)) {
+                    h2->current_health -= d1->damage_amount;
                     printf("Projectile %u hit entity %u at position (%f, %f, %f)\n",
                            e1, e2, t1->position[0], t1->position[1], t1->position[2]);
                     entity_destroy(e1);
+                    if (h2->current_health <= 0.0f) {
+                        entity_destroy(e2); // Destroy target if health depleted
+                    }
                 }
                 // Check if e2 is a projectile and e1 is not its owner
                 else if (p2 && (!p1 || p2->owner != e1)) {
+                    h1->current_health -= d2->damage_amount;
                     printf("Projectile %u hit entity %u at position (%f, %f, %f)\n",
                            e2, e1, t2->position[0], t2->position[1], t2->position[2]);
                     entity_destroy(e2);
+                    if (h1->current_health <= 0.0f) {
+                        entity_destroy(e1); // Destroy target if health depleted
+                    }
                 }
                 // Existing collision resolution for non-projectiles
                 else {

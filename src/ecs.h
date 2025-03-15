@@ -22,7 +22,9 @@ typedef enum ComponentType {
     COMPONENT_COLLISION = 1 << 4,
     COMPONENT_PROJECTILE = 1 << 5,
     COMPONENT_VELOCITY = 1 << 6,
-    COMPONENT_LIFETIME = 1 << 7
+    COMPONENT_LIFETIME = 1 << 7,
+    COMPONENT_HEALTH = 1 << 8,
+    COMPONENT_DAMAGE = 1 << 9,
 } ComponentType;
 
 typedef struct {
@@ -32,6 +34,15 @@ typedef struct {
 } Registry;
 
 extern Registry registry;
+
+typedef struct {
+    float current_health;
+    float max_health;
+} HealthComponent;
+
+typedef struct {
+    float damage_amount;
+} DamageComponent;
 
 /*
   Create entity_get_component and entity_set_component
@@ -56,3 +67,9 @@ void render_system(int width, int height);
 
 void* ecs_get_component(Entity e, ComponentType type);
 void ecs_set_component(Entity e, ComponentType type, void* component);
+
+// TODO: Move health and damage components to other game logic stuff
+HealthComponent* entity_get_health(Entity e);
+void entity_set_health(Entity e, HealthComponent component);
+DamageComponent* entity_get_damage(Entity e);
+void entity_set_damage(Entity e, DamageComponent component);

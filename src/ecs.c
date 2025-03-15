@@ -13,6 +13,7 @@
 #include "render.h"
 #include "camera.h"
 #include "physics.h"
+#include "projectile.h"
 
 Registry registry = {0};
 static TransformComponent transform_pool[MAX_ENTITIES];
@@ -20,6 +21,9 @@ static RenderComponent render_pool[MAX_ENTITIES];
 static CameraComponent camera_pool[MAX_ENTITIES];
 static FollowComponent follow_pool[MAX_ENTITIES];
 static CollisionComponent collision_pool[MAX_ENTITIES];
+static ProjectileComponent projectile_pool[MAX_ENTITIES];
+static VelocityComponent velocity_pool[MAX_ENTITIES];
+static LifetimeComponent lifetime_pool[MAX_ENTITIES];
 
 void ecs_init()
 {
@@ -29,6 +33,9 @@ void ecs_init()
     memset(&camera_pool, 0, sizeof(camera_pool));
     memset(&follow_pool, 0, sizeof(follow_pool));
     memset(&collision_pool, 0, sizeof(collision_pool));
+    memset(&projectile_pool, 0, sizeof(projectile_pool));
+    memset(&velocity_pool, 0, sizeof(velocity_pool));
+    memset(&lifetime_pool, 0, sizeof(lifetime_pool));
 }
 
 Entity entity_create()
@@ -47,6 +54,13 @@ Entity entity_create()
 void entity_destroy(Entity e)
 {
     if (!entity_is_alive(e)) return;
+
+    if (registry.component_masks[e] & COMPONENT_RENDER) {
+        RenderComponent* rc = &render_pool[e];
+        sg_destroy_buffer(rc->vertex_buffer);
+        sg_destroy_buffer(rc->index_buffer);
+        // Note: Do NOT destroy rc->pipeline here, as it's now shared
+    }
 
     registry.alive[e] = false;
     registry.component_masks[e] = 0;
@@ -70,6 +84,9 @@ void* ecs_get_component(Entity e, ComponentType type)
         case COMPONENT_CAMERA: return &camera_pool[e];
         case COMPONENT_FOLLOW: return &follow_pool[e];
         case COMPONENT_COLLISION: return &collision_pool[e];
+        case COMPONENT_PROJECTILE: return &projectile_pool[e];
+        case COMPONENT_VELOCITY: return &velocity_pool[e];
+        case COMPONENT_LIFETIME: return &lifetime_pool[e];
         // Other cases...
         default: return NULL;
     }
@@ -94,6 +111,15 @@ void ecs_set_component(Entity e, ComponentType type, void* component)
             break;
         case COMPONENT_COLLISION:
             collision_pool[e] = *(CollisionComponent*)component;
+            break;
+        case COMPONENT_PROJECTILE:
+            projectile_pool[e] = *(ProjectileComponent*)component;
+            break;
+        case COMPONENT_VELOCITY:
+            velocity_pool[e] = *(VelocityComponent*)component;
+            break;
+        case COMPONENT_LIFETIME:
+            lifetime_pool[e] = *(LifetimeComponent*)component;
             break;
         // Other components...
     }
@@ -178,7 +204,7 @@ void render_system(int width, int height)
         }
         uint32_t mask = registry.component_masks[e];
         if ((mask & (COMPONENT_TRANSFORM | COMPONENT_RENDER)) ==
-                        (COMPONENT_TRANSFORM | COMPONENT_RENDER))
+                    (COMPONENT_TRANSFORM | COMPONENT_RENDER))
         {
             TransformComponent* t = &transform_pool[e];
             RenderComponent*    r = &render_pool[e];

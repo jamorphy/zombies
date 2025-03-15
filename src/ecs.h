@@ -19,7 +19,10 @@ typedef enum ComponentType {
     COMPONENT_RENDER = 1 << 1,
     COMPONENT_CAMERA = 1 << 2,
     COMPONENT_FOLLOW = 1 << 3,
-    COMPONENT_COLLISION = 1 << 4
+    COMPONENT_COLLISION = 1 << 4,
+    COMPONENT_PROJECTILE = 1 << 5,
+    COMPONENT_VELOCITY = 1 << 6,
+    COMPONENT_LIFETIME = 1 << 7
 } ComponentType;
 
 typedef struct {

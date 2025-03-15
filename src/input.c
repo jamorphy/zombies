@@ -3,6 +3,7 @@
 #include "transform.h"
 #include "camera.h"
 #include "macros.h"
+#include "projectile.h"
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -122,6 +123,11 @@ void input_process(InputState* input, Entity player, Entity camera, float delta_
     vec3_scale(move_input, move_dir, MOVE_SPEED * delta_time);
 
     vec3_add(t->position, t->position, move_input);
+
+    if (input->keys[SAPP_KEYCODE_SPACE]) {
+        create_projectile(player, camera);
+        input->keys[SAPP_KEYCODE_SPACE] = false;
+    }
 
     input->mouse_dx = 0.0;
     input->mouse_dy = 0.0;

@@ -24,6 +24,12 @@ static CollisionComponent collision_pool[MAX_ENTITIES];
 static ProjectileComponent projectile_pool[MAX_ENTITIES];
 static VelocityComponent velocity_pool[MAX_ENTITIES];
 static LifetimeComponent lifetime_pool[MAX_ENTITIES];
+static HealthComponent health_pool[MAX_ENTITIES];
+static DamageComponent damage_pool[MAX_ENTITIES];
+
+// TODO: Move health and damage components to other game logic stuff
+ECS_COMPONENT_ACCESSORS(health, HealthComponent, COMPONENT_HEALTH)
+ECS_COMPONENT_ACCESSORS(damage, DamageComponent, COMPONENT_DAMAGE)
 
 void ecs_init()
 {
@@ -36,6 +42,8 @@ void ecs_init()
     memset(&projectile_pool, 0, sizeof(projectile_pool));
     memset(&velocity_pool, 0, sizeof(velocity_pool));
     memset(&lifetime_pool, 0, sizeof(lifetime_pool));
+    memset(&health_pool, 0, sizeof(health_pool));
+    memset(&damage_pool, 0, sizeof(damage_pool));
 }
 
 Entity entity_create()
@@ -55,12 +63,16 @@ void entity_destroy(Entity e)
 {
     if (!entity_is_alive(e)) return;
 
-    if (registry.component_masks[e] & COMPONENT_RENDER) {
-        RenderComponent* rc = &render_pool[e];
-        sg_destroy_buffer(rc->vertex_buffer);
-        sg_destroy_buffer(rc->index_buffer);
-        // Note: Do NOT destroy rc->pipeline here, as it's now shared
-    }
+    // (dirty): Don't destroy render components everytime an entity dies
+    // A couple options:
+    // Ref counts, only destroy when nothing is ref a RenderComponent
+    // every entity has it's own RenderComponent
+    /* if (registry.component_masks[e] & COMPONENT_RENDER) { */
+    /*     RenderComponent* rc = &render_pool[e]; */
+    /*     sg_destroy_buffer(rc->vertex_buffer); */
+    /*     sg_destroy_buffer(rc->index_buffer); */
+    /*     // Note: Do NOT destroy rc->pipeline here, as it's now shared */
+    /* } */
 
     registry.alive[e] = false;
     registry.component_masks[e] = 0;
@@ -87,6 +99,8 @@ void* ecs_get_component(Entity e, ComponentType type)
         case COMPONENT_PROJECTILE: return &projectile_pool[e];
         case COMPONENT_VELOCITY: return &velocity_pool[e];
         case COMPONENT_LIFETIME: return &lifetime_pool[e];
+        case COMPONENT_HEALTH: return &health_pool[e];
+        case COMPONENT_DAMAGE: return &damage_pool[e];
         // Other cases...
         default: return NULL;
     }
@@ -120,6 +134,12 @@ void ecs_set_component(Entity e, ComponentType type, void* component)
             break;
         case COMPONENT_LIFETIME:
             lifetime_pool[e] = *(LifetimeComponent*)component;
+            break;
+        case COMPONENT_HEALTH:
+            health_pool[e] = *(HealthComponent*)component;
+            break;
+        case COMPONENT_DAMAGE:
+            damage_pool[e] = *(DamageComponent*)component;
             break;
         // Other components...
     }

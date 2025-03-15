@@ -78,6 +78,9 @@ void create_projectile(Entity shooter, vec3 position, vec3 direction) {
     ProjectileComponent p = { .owner = shooter };
     entity_set_projectile(projectile, p);
 
+    DamageComponent d = { .damage_amount = 10.0f };
+    entity_set_damage(projectile, d);
+
     LifetimeComponent l = { .lifetime = 5.0f };
     entity_set_lifetime(projectile, l);
 }

@@ -83,6 +83,8 @@ void init(void)
     entity_set_transform(cube_e, t);
     entity_set_render(cube_e, cube_rc);
     entity_set_collision(cube_e, (CollisionComponent){.size = {1, 1, 1}, .center_offset = {0, 0, 0}, .is_static = true});
+    HealthComponent h_player = { .current_health = 30.0f, .max_health = 100.0f };
+    entity_set_health(cube_e, h_player);
 
     // New cube 1: Tall thin pillar
     Entity cube1 = entity_create();
@@ -92,6 +94,7 @@ void init(void)
     entity_set_transform(cube1, t_c1);
     entity_set_render(cube1, cube_rc);
     entity_set_collision(cube1, (CollisionComponent){.size = {1, 1, 1}, .center_offset = {0, 0, 0}, .is_static = true});
+    entity_set_health(cube1, h_player);
 
     // New cube 2: Wide flat platform
     Entity cube2 = entity_create();
@@ -101,6 +104,7 @@ void init(void)
     entity_set_transform(cube2, t_c2);
     entity_set_render(cube2, cube_rc);
     entity_set_collision(cube2, (CollisionComponent){.size = {1, 1, 1}, .center_offset = {0, 0, 0}, .is_static = true});
+    entity_set_health(cube2, h_player);
 
     // New cube 3: Long wall
     Entity cube3 = entity_create();
@@ -110,6 +114,7 @@ void init(void)
     entity_set_transform(cube3, t_c3);
     entity_set_render(cube3, cube_rc);
     entity_set_collision(cube3, (CollisionComponent){.size = {1, 1, 1}, .center_offset = {0, 0, 0}, .is_static = true});
+    entity_set_health(cube3, h_player);
 
     // New cube 4: Medium box
     Entity cube4 = entity_create();
@@ -119,6 +124,7 @@ void init(void)
     entity_set_transform(cube4, t_c4);
     entity_set_render(cube4, cube_rc);
     entity_set_collision(cube4, (CollisionComponent){.size = {1, 1, 1}, .center_offset = {0, 0, 0}, .is_static = true});
+    entity_set_health(cube4, h_player);
 
     // New cube 5: Small floating block
     Entity cube5 = entity_create();
@@ -128,6 +134,7 @@ void init(void)
     entity_set_transform(cube5, t_c5);
     entity_set_render(cube5, cube_rc);
     entity_set_collision(cube5, (CollisionComponent){.size = {1, 1, 1}, .center_offset = {0, 0, 0}, .is_static = true});
+    entity_set_health(cube5, h_player);
 
     // Player entity (cube)
     player = entity_create();
